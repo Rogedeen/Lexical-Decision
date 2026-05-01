@@ -1,21 +1,16 @@
 # Frontend Report - Lexical Decision Task
 
-## Status: V1.2 Stimuli Implementation Complete
+## Status: V1.1 Code Cleanup & Sync
 **Date:** 2026-05-01
 **Lead Agent:** Frontend Agent (React & UI/UX)
 
 ## Current Progress
 1. [completed] Project Scaffolding
 2. [completed] High-Precision Timing Hook (`performance.now()`)
-3. [completed] UI Translation to English
-4. [completed] Data Schema Sync (`responseTimeMs`)
-5. [completed] Implementation of 60 Stimuli (30 Words, 30 Pseudo-words)
-6. [completed] Stimuli Randomization Logic
-
-## Technical Details
-- **Stimuli:** Added 60 specific items provided by the user. 30 words (Telescope, Resilience, etc.) and 30 pseudo-words (Blicket, Snarkle, etc.).
-- **Randomization:** Added a shuffling mechanism in `LexicalTask.jsx` to ensure words appear in a different order for every participant.
-- **Accuracy:** Fixed logic to handle the full 60-item loop dynamically.
+3. [completed] UI Translation to English (Compliance with clean_code.md)
+4. [completed] Data Schema Sync (`reactionTime` -> `responseTimeMs`)
+5. [completed] English Stimuli Implementation
+6. [completed] PDF Report Localization
 
 ## Technical Details
 - **Sync:** The internal result objects now use `responseTimeMs` to match [supabase_service.js](../supabase_service.js).

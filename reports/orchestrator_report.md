@@ -1,20 +1,23 @@
 # Orchestrator Report - Lexical Decision Task
 
-## Project Status: Initializing
+## Project Status: User Acceptance Testing (UAT) Fixes Phase
 **Date:** 2026-05-01
 **Lead Agent:** Orchestrator Agent
 
 ## Current Roadmap
-1. [in-progress] Project Initialization & Schema Design Start
-2. [not-started] Backend/DB Implementation
-3. [not-started] Frontend Development
-4. [not-started] Integration & Precision Testing
+1. [completed] Project Initialization & Schema Design Start
+2. [completed] Backend/DB Implementation (Initial)
+3. [completed] Frontend Development (Initial)
+4. [in-progress] UAT Fixes & Iteration (Form, Mobile UI, PDF, Excel Export, Auth)
+5. [not-started] Final Precision & Production Deployment
 
 ## Active Tasks
-- **Orchestrator:** Monitoring cross-agent synchronization (Frontend/Backend).
-- **Backend Agent:** [completed] SQL schema and RLS policies drafted in [reports/backend_report.md](reports/backend_report.md).
-- **Frontend Agent:** [in-progress] Scaffolding React project and designing the timing loop in [reports/frontend_report.md](reports/frontend_report.md).
-- **Researcher Agent:** Analyze lexical decision task requirements.
+- **Orchestrator:** Coordinated UAT feedback. Validated Frontend completion. Handled GitHub synchronization. Delegating DB/Auth logic to Backend Agent.
+- **Frontend Agent:** [completed] Form simplified, mobile buttons added, test pacing fixed, PDF reports updated (all words, no date), Admin Login UI added, and Detailed Excel Export logic structured.
+- **Backend Agent:** [in-progress] Must implement the following:
+  - Provide SQL for Admin Auth verification setup if required, or coordinate with Frontend for standard auth verification.
+  - Review RLS (Row Level Security) policies on Supabase tables to ensure anonymous users can INSERT data (currently failing to save to DB).
 
 ## Blockers
-- None.
+- Database inserts failing (assigned to Backend).
+- Admin panel open to public (assigned to Frontend/Backend).
