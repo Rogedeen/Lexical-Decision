@@ -1,7 +1,4 @@
 import { useState } from 'react';
-import { Search, Download, Trash2 } from 'lucide-react';
-
-import { useState } from 'react';
 import { Search, Download, Trash2, Eye, Lock, LogIn } from 'lucide-react';
 
 const AdminDashboard = () => {
