@@ -121,6 +121,10 @@ dist
 .env.production.local
 supabase.env
 
+# Exported files
+*.pdf
+*.xlsx
+
 # OS Files
 .DS_Store
 Thumbs.db
