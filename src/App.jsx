@@ -40,6 +40,7 @@ function App() {
       console.log('Data successfully saved to Supabase');
     } catch (error) {
       console.error('Error saving data:', error.message);
+      alert('An error occurred while saving your results to the database. However, your session results are still available for PDF download.');
     } finally {
       setIsSaving(false);
     }

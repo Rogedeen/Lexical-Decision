@@ -32,7 +32,7 @@ export async function saveTrialResults(participantId, results) {
     const formattedResults = results.map(result => ({
         participant_id: participantId,
         stimulus: result.stimulus || result.word,
-        response_time_ms: result.responseTimeMs,
+        response_time_ms: Math.round(result.responseTimeMs),
         is_correct: result.isCorrect,
         trial_type: result.trialType || result.type
     }));
