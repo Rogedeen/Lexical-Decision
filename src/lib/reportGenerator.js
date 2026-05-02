@@ -40,11 +40,16 @@ export const generatePDFReport = (participant, results) => {
       yPos = 20;
     }
 
-    const text = `${String(i + 1).padStart(2, '0')}. ${res.word.padEnd(12)} | ${res.isCorrect ? 'Correct  ' : 'Incorrect'} | ${res.responseTimeMs.toFixed(0)} ms`;
+    const correctAns = res.type.toUpperCase();
+    const givenAns = res.responseTimeMs > 0 
+      ? (res.isCorrect ? correctAns : (correctAns === 'WORD' ? 'NON-WORD' : 'WORD'))
+      : 'N/A';
+
+    const text = `${String(i + 1).padStart(2, '0')}. ${res.word.padEnd(12)} | ${correctAns.padEnd(8)} | ${givenAns.padEnd(8)} | ${res.isCorrect ? '✓' : '✗'} | ${res.responseTimeMs.toFixed(1)} ms`;
     doc.setFont("courier", "normal");
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.text(text, xOffset, yPos);
-    yPos += 7;
+    yPos += 6;
   });
 
   doc.save(`LD_Task_Results_${participant.fullName.replace(/\s+/g, '_')}.pdf`);

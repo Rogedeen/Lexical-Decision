@@ -49,7 +49,7 @@ export const exportMatrixExcel = (participantsData) => {
     
     // Values for canonical columns 1 to 60
     orderedTrials.forEach(t => {
-      row.push(t.responseTimeMs || "");
+      row.push(t.responseTimeMs ? Number(t.responseTimeMs.toFixed(2)) : "");
     });
 
     row.push(totalTime.toFixed(0));
