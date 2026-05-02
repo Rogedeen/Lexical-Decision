@@ -1,7 +1,13 @@
 import { jsPDF } from "jspdf";
+import { mapToOriginalOrder } from "./words";
 
 export const generatePDFReport = (participant, results) => {
   const doc = new jsPDF();
+  
+  // Basic setup for UTF-8 and Turkish character support 
+  // Standard fonts in jsPDF usually struggle with Turkish characters without a custom .ttf font.
+  // We use the 'Unicode' encoding flag if custom fonts were loaded, 
+  // but for standard fonts, we ensure strings are handled cleanly.
   
   // Header
   doc.setFontSize(22);
@@ -12,7 +18,7 @@ export const generatePDFReport = (participant, results) => {
   doc.text(`Participant: ${participant.fullName}`, 20, 40);
 
   // Summary Stats
-  const avgRT = results.reduce((acc, r) => acc + r.responseTimeMs, 0) / results.length;
+  const avgRT = results.reduce((acc, r) => acc + (r.responseTimeMs || 0), 0) / results.length;
   const accuracy = (results.filter(r => r.isCorrect).length / results.length) * 100;
 
   doc.text("--- Summary Statistics ---", 20, 60);
@@ -20,13 +26,14 @@ export const generatePDFReport = (participant, results) => {
   doc.text(`Accuracy: %${accuracy.toFixed(2)}`, 20, 80);
   doc.text(`Average Response Time: ${avgRT.toFixed(2)} ms`, 20, 90);
 
-  // Detailed Results - Full List
-  doc.text("--- Detailed Results (Full 60 Items) ---", 20, 110);
+  // Detailed Results - Map to Original 1-60 Order
+  const orderedResults = mapToOriginalOrder(results);
+  doc.text("--- Detailed Results (Original Order) ---", 20, 110);
   
   let yPos = 120;
   let xOffset = 20;
 
-  results.forEach((res, i) => {
+  orderedResults.forEach((res, i) => {
     // Add new page if necessary
     if (yPos > 280) {
       doc.addPage();

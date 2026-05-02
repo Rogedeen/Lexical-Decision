@@ -21,63 +21,48 @@ Admin access is secured using Supabase Auth.
     *   Enter the Admin email and password.
     *   *Note:* Ensure "Confirm Email" is disabled in Auth Settings if you want to log in immediately.
 
-## 1. Current Status
-* Finalized Supabase Client Services with Auth and Fetch functions. The `supabase_service.js` file is now ready for Frontend integration.
+## 1. Current Status (Post-Launch Audit)
+* **Security:** Hardcoded API keys removed. Switched to `import.meta.env`.
+* **Reliability:** Data fetch functions optimized for stimulus-matching (Excel reports).
+* **New Features:** Added `deleteParticipant` logic for data management.
 
 ## 2. Done
-* **Supabase Client Logic:** Updated [supabase_service.js](supabase_service.js) with the following methods:
-    * `adminLogin(email, password)`: Handles secure sign-in via Supabase Auth.
-    * `adminLogout()`: Handles secure sign-out.
-    * `fetchFullReport()`: Fetches all participants and their nested trial results in a single, easy-to-read JSON structure.
-* **No SQL Required:** Confirmed that current SQL schema and RLS policies support these service calls.
+* **Environment Security:** `supabase_service.js` now uses `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+* **Data Fetch Optimization:** `fetchFullReport` now returns a mapping-friendly structure with full stimulus data.
+* **Delete Service:** Implemented `deleteParticipant(participantId)` with explicit trial cleanup.
+* **RLS Audit:** Updated policies to allow `DELETE` and `UPDATE` only for authenticated admins.
 
-## 3. Usage Guide for Frontend Agent
-The Frontend Agent can import and use the following functions from [supabase_service.js](supabase_service.js):
+## 3. Usage Guide for Frontend Agent (Updates)
 
-### A. Authentication
+### A. Deleting a Participant
 ```javascript
-import { adminLogin, adminLogout } from './supabase_service.js';
+import { deleteParticipant } from './supabase_service.js';
 
-// To login
+// Call this from the admin panel
 try {
-    const { user, session } = await adminLogin('admin@example.com', 'secure_password');
+    await deleteParticipant('participant-uuid-here');
+    alert('Deleted successfully');
 } catch (error) {
-    console.error('Login failed:', error.message);
+    alert('Delete failed: ' + error.message);
 }
-
-// To logout
-await adminLogout();
 ```
 
-### B. Fetching Results for Admin Dashboard
-```javascript
-import { fetchFullReport } from './supabase_service.js';
+### B. Important Note on Excel Mapping
+`fetchFullReport()` returns an array where each participant has a `trials` property. Each trial contains the `stimulus` string. 
+Frontend should use this `stimulus` to match against its 1-60 word list to ensure correct column alignment in Excel exports.
 
-const reportData = await fetchFullReport();
-/* 
-Result Structure:
-[
-  {
-    id: "uuid",
-    firstName: "John",
-    lastName: "Doe",
-    date: "timestamp",
-    trials: [
-      { stimulus: "apple", responseTimeMs: 450, isCorrect: true, trialType: "word" },
-      ...
-    ]
-  },
-  ...
-]
-*/
-```
+## 4. SQL Configuration (Applied via MCP)
+The following SQL changes have been successfully applied to the `xddluxjayupgyhzcjlla` project:
 
-## 4. To Do (Next Steps)
-* [ ] Assist Frontend Agent with UI binding of `fetchFullReport`.
-* [ ] Verify data persistence integrity during stress testing.
+1.  **Updated RLS Policies:**
+    *   `participants`: Anonymous users can `INSERT`. Authenticated Admins have `ALL` (Select, Update, Delete) access.
+    *   `trial_results`: Anonymous users can `INSERT`. Authenticated Admins have `ALL` (Select, Update, Delete) access.
+2.  **Foreign Key Cascade:**
+    *   Added `ON DELETE CASCADE` to `trial_results_participant_id_fkey`. Deleting a participant now automatically cleans up their trial results.
 
-## 5. Blockers / Dependencies
-* None. Ready for Frontend integration.
+## 5. Next Steps
+* [ ] Frontend Agent to implement a "Delete" button in the Admin Dashboard linked to `deleteParticipant`.
+* [ ] Verify that Vercel Environment Variables are correctly set.
 
 ---
 
@@ -121,17 +106,19 @@ CREATE POLICY "Enable insert for anonymous users" ON trial_results
     FOR INSERT 
     WITH CHECK (true);
 
--- 2. Admin Read Policy (Allow only authenticated admins to read)
--- Uses Supabase Auth to ensure only logged-in users (admins) can access data.
-CREATE POLICY "Enable select for authenticated admins only" ON participants
-    FOR SELECT 
+-- Admin Read & Delete Policy (Allow only authenticated admins to read and delete)
+-- Uses Supabase Auth to ensure only logged-in users (admins) can access/modify data.
+CREATE POLICY "Enable select and delete for authenticated admins only" ON participants
+    FOR ALL
     TO authenticated 
-    USING (true);
+    USING (true)
+    WITH CHECK (true);
 
-CREATE POLICY "Enable select for authenticated admins only" ON trial_results
-    FOR SELECT 
+CREATE POLICY "Enable select and delete for authenticated admins only" ON trial_results
+    FOR ALL
     TO authenticated 
-    USING (true);
+    USING (true)
+    WITH CHECK (true);
 ```
 
 ## Security Strategy (RLS)

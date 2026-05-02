@@ -1,10 +1,11 @@
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { STIMULI, mapToOriginalOrder } from './words';
 
 /**
  * Generates an Excel (XLSX) matrix report based on the specified format.
  * Rows: Participants (First Name, Last Name)
- * Columns: Name, Surname, Trial 1, Trial 2... Trial 60, Total Time, Avg Time
+ * Columns: Name, Surname, 1 - WORD1, 2 - WORD2... 60 - WORD60, Total Time, Avg Time
  * Footer: Global Average for each column
  */
 export const exportMatrixExcel = (participantsData) => {
@@ -12,24 +13,26 @@ export const exportMatrixExcel = (participantsData) => {
 
   // 1. Prepare Headers
   const baseHeaders = ["First Name", "Last Name"];
-  const trialHeaders = Array.from({ length: 60 }, (_, i) => `Trial ${i + 1}`);
+  const trialHeaders = STIMULI.map((s, i) => `${i + 1} - ${s.word}`);
   const summaryHeaders = ["Total Time", "Average Time"];
   const headers = [...baseHeaders, ...trialHeaders, ...summaryHeaders];
 
   // 2. Prepare Rows
   const rows = participantsData.map((p) => {
-    const trials = p.trials || [];
-    const totalTime = trials.reduce((sum, t) => sum + (t.response_time_ms || 0), 0);
-    const avgTime = trials.length > 0 ? totalTime / trials.length : 0;
+    // Map existing trials to the canonical 1-60 order
+    const orderedTrials = mapToOriginalOrder(p.trials || []);
+    
+    const totalTime = orderedTrials.reduce((sum, t) => sum + (t.responseTimeMs || 0), 0);
+    const avgTime = orderedTrials.length > 0 ? totalTime / orderedTrials.length : 0;
 
     const row = [p.firstName, p.lastName];
     
-    // Ensure exactly 60 trial columns
-    for (let i = 0; i < 60; i++) {
-      row.push(trials[i] ? trials[i].response_time_ms : "");
-    }
+    // Values for canonical columns 1 to 60
+    orderedTrials.forEach(t => {
+      row.push(t.responseTimeMs || "");
+    });
 
-    row.push(totalTime);
+    row.push(totalTime.toFixed(0));
     row.push(avgTime.toFixed(2));
     return row;
   });
@@ -37,24 +40,28 @@ export const exportMatrixExcel = (participantsData) => {
   // 3. Calculate Global Averages (Footer)
   const footerRow = ["GLOBAL AVERAGE", ""];
   
-  // Averages for Trial 1 to 60
-  for (let col = 0; col < 60; col++) {
+  // Averages for each specific word (columns 1 to 60)
+  for (let colIndex = 0; colIndex < 60; colIndex++) {
     let sum = 0;
     let count = 0;
+
     participantsData.forEach((p) => {
-      if (p.trials && p.trials[col] && typeof p.trials[col].response_time_ms === 'number') {
-        sum += p.trials[col].response_time_ms;
+      const ordered = mapToOriginalOrder(p.trials || []);
+      const val = ordered[colIndex]?.responseTimeMs;
+      if (typeof val === 'number' && val > 0) {
+        sum += val;
         count++;
       }
     });
     footerRow.push(count > 0 ? (sum / count).toFixed(2) : "");
   }
 
-  // Average for Total Time
+  // Global Average for Total Time
   let totalSum = 0;
   let totalCount = 0;
   participantsData.forEach(p => {
-    const time = (p.trials || []).reduce((s, t) => s + (t.response_time_ms || 0), 0);
+    const trials = p.trials || [];
+    const time = trials.reduce((s, t) => s + (t.response_time_ms || t.responseTimeMs || 0), 0);
     if (time > 0) {
       totalSum += time;
       totalCount++;
@@ -62,13 +69,13 @@ export const exportMatrixExcel = (participantsData) => {
   });
   footerRow.push(totalCount > 0 ? (totalSum / totalCount).toFixed(2) : "");
 
-  // Average for Avg Time
+  // Global Average for Session Avg Time
   let avgOfAvgSum = 0;
   let avgOfAvgCount = 0;
   participantsData.forEach(p => {
     const trials = p.trials || [];
     if (trials.length > 0) {
-      const pAvg = trials.reduce((s, t) => s + (t.response_time_ms || 0), 0) / trials.length;
+      const pAvg = trials.reduce((s, t) => s + (t.response_time_ms || t.responseTimeMs || 0), 0) / trials.length;
       avgOfAvgSum += pAvg;
       avgOfAvgCount++;
     }
@@ -77,6 +84,7 @@ export const exportMatrixExcel = (participantsData) => {
 
   // 4. Create Workbook and Worksheet
   const worksheetData = [headers, ...rows, footerRow];
+  // SheetJS handles UTF-8 automatically for XLSX
   const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Lexical Task Report");

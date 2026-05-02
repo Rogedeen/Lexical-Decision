@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Search, Download, Trash2, Eye, Lock, LogIn, Loader2 } from 'lucide-react';
-import { adminLogin, fetchFullReport, isAuthenticated as checkAuth } from '../../supabase_service';
+import { adminLogin, fetchFullReport, isAuthenticated as checkAuth, deleteParticipant } from '../../supabase_service';
 import { exportMatrixExcel } from '../lib/excelGenerator';
+import { mapToOriginalOrder } from '../lib/words';
 
 const AdminDashboard = () => {
   const [authenticated, setAuthenticated] = useState(false);
@@ -52,6 +53,20 @@ const AdminDashboard = () => {
 
   const handleExport = () => {
     exportMatrixExcel(participants);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Bu test sonucunu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
+      try {
+        await deleteParticipant(id);
+        setParticipants(participants.filter(p => p.id !== id));
+        if (selectedParticipant?.id === id) {
+          setSelectedParticipant(null);
+        }
+      } catch (error) {
+        alert("Silme işlemi sırasında bir hata oluştu.");
+      }
+    }
   };
 
   if (loading && !authenticated) {
@@ -122,24 +137,22 @@ const AdminDashboard = () => {
         </div>
       ) : (
         <>
-          {selectedParticipant ? (
             <div className="bg-gray-800 rounded-3xl p-8 border border-gray-700 mb-8 animate-in fade-in slide-in-from-bottom-4">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-blue-400">{selectedParticipant.firstName} {selectedParticipant.lastName}'s Trials</h2>
+                <h2 className="text-2xl font-bold text-blue-400">{selectedParticipant.firstName} {selectedParticipant.lastName}'s Trials (Original Order)</h2>
                 <button onClick={() => setSelectedParticipant(null)} className="text-gray-400 hover:text-white underline">Close Details</button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-10 gap-2">
-                {selectedParticipant.trials.map((r, i) => (
+                {mapToOriginalOrder(selectedParticipant.trials).map((r, i) => (
                   <div key={i} className="bg-gray-900/50 p-2 rounded border border-gray-700 text-center">
-                    <p className="text-[10px] text-gray-500">TRIAL {i+1}</p>
-                    <p className={`text-sm font-mono ${r.is_correct ? 'text-blue-300' : 'text-red-400'}`}>
-                      {r.response_time_ms.toFixed(0)}ms
+                    <p className="text-[10px] text-gray-500">{i+1}. {r.word}</p>
+                    <p className={`text-sm font-mono ${r.isCorrect ? 'text-blue-300' : 'text-red-400'}`}>
+                      {r.responseTimeMs > 0 ? `${r.responseTimeMs.toFixed(0)}ms` : '-'}
                     </p>
                   </div>
                 ))}
               </div>
             </div>
-          ) : null}
 
           <div className="bg-gray-800 rounded-3xl border border-gray-700 overflow-hidden shadow-2xl">
             <table className="w-full text-left">
@@ -161,12 +174,20 @@ const AdminDashboard = () => {
                         ? (item.trials.reduce((acc, t) => acc + t.response_time_ms, 0) / item.trials.length).toFixed(1) 
                         : 0} ms
                     </td>
-                    <td className="px-6 py-5 text-right">
+                    <td className="px-6 py-5 text-right space-x-2">
                       <button 
                         onClick={() => setSelectedParticipant(item)}
                         className="p-3 bg-gray-700 hover:bg-blue-600 rounded-xl transition-all text-white inline-flex"
+                        title="View Details"
                       >
                         <Eye size={20} />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(item.id)}
+                        className="p-3 bg-gray-700 hover:bg-red-600 rounded-xl transition-all text-white inline-flex"
+                        title="Delete Participant"
+                      >
+                        <Trash2 size={20} />
                       </button>
                     </td>
                   </tr>

@@ -128,3 +128,6 @@ supabase.env
 # OS Files
 .DS_Store
 Thumbs.db
+agents/
+reports/
+rules/
