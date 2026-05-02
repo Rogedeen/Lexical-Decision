@@ -18,39 +18,59 @@ export const generatePDFReport = (participant, results) => {
   doc.text(`Participant: ${participant.fullName}`, 20, 40);
 
   // Summary Stats
-  const avgRT = results.reduce((acc, r) => acc + (r.responseTimeMs || 0), 0) / results.length;
-  const accuracy = (results.filter(r => r.isCorrect).length / results.length) * 100;
+  const correctCount = results.filter(r => r.isCorrect).length;
+  const totalCount = results.length;
+  const totalTime = results.reduce((acc, r) => acc + (r.responseTimeMs || 0), 0);
+  const avgRT = totalTime / totalCount;
+  const accuracy = (correctCount / totalCount) * 100;
 
   doc.text("--- Summary Statistics ---", 20, 60);
-  doc.text(`Total Stimuli: ${results.length}`, 20, 70);
-  doc.text(`Accuracy: %${accuracy.toFixed(2)}`, 20, 80);
-  doc.text(`Average Response Time: ${avgRT.toFixed(2)} ms`, 20, 90);
+  doc.text(`Total Stimuli: ${totalCount}`, 20, 70);
+  doc.text(`Accuracy: ${correctCount} / ${totalCount} (%${accuracy.toFixed(1)})`, 20, 80);
+  doc.text(`Total Completion Time: ${(totalTime / 1000).toFixed(2)} seconds`, 20, 90);
+  doc.text(`Average Response Time: ${avgRT.toFixed(2)} ms`, 20, 100);
 
-  // Detailed Results - Map to Original 1-60 Order
+  // Detailed Results
   const orderedResults = mapToOriginalOrder(results);
-  doc.text("--- Detailed Results (Original Order) ---", 20, 110);
+  const words = orderedResults.filter(r => r.category === 'word');
+  const nonWords = orderedResults.filter(r => r.category === 'non-word');
   
   let yPos = 120;
-  let xOffset = 20;
+  const xOffset = 20;
 
-  orderedResults.forEach((res, i) => {
-    // Add new page if necessary
-    if (yPos > 280) {
-      doc.addPage();
-      yPos = 20;
-    }
-
-    const correctAns = res.type.toUpperCase();
-    const givenAns = res.responseTimeMs > 0 
-      ? (res.isCorrect ? correctAns : (correctAns === 'WORD' ? 'NON-WORD' : 'WORD'))
-      : 'N/A';
-
-    const text = `${String(i + 1).padStart(2, '0')}. ${res.word.padEnd(12)} | ${correctAns.padEnd(8)} | ${givenAns.padEnd(8)} | ${res.isCorrect ? '✓' : '✗'} | ${res.responseTimeMs.toFixed(1)} ms`;
+  const renderSection = (title, items) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text(title, 20, yPos);
+    yPos += 10;
+    
     doc.setFont("courier", "normal");
     doc.setFontSize(9);
-    doc.text(text, xOffset, yPos);
-    yPos += 6;
-  });
+    
+    items.forEach((res, i) => {
+      if (yPos > 280) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      const displayWord = res.category === 'word' 
+        ? `${res.word} (${res.subType})` 
+        : res.word;
+      
+      const correctAns = res.type.toUpperCase();
+      const givenAns = res.responseTimeMs > 0 
+        ? (res.isCorrect ? correctAns : (correctAns === 'WORD' ? 'NON-WORD' : 'WORD'))
+        : 'N/A';
+
+      const text = `${String(i + 1).padStart(2, '0')}) ${displayWord.padEnd(25)} | ${correctAns.padEnd(8)} | ${givenAns.padEnd(8)} | ${res.responseTimeMs.toFixed(1).padStart(7)} ms | ${res.isCorrect ? 'Correct' : 'WRONG'}`;
+      doc.text(text, xOffset, yPos);
+      yPos += 6;
+    });
+    yPos += 5;
+  };
+
+  renderSection("--- REAL WORDS ---", words);
+  renderSection("--- NON-WORDS ---", nonWords);
 
   doc.save(`LD_Task_Results_${participant.fullName.replace(/\s+/g, '_')}.pdf`);
 };

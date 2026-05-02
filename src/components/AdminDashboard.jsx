@@ -182,7 +182,9 @@ const AdminDashboard = () => {
                 {participants.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-700/30 transition-colors">
                     <td className="px-6 py-5 font-bold text-lg">{item.firstName} {item.lastName}</td>
-                    <td className="px-6 py-5 text-gray-400">{item.trials?.length || 0} / 60</td>
+                    <td className="px-6 py-5 text-gray-400">
+                      <span className="text-white font-medium">{item.trials?.filter(t => t.isCorrect).length || 0}</span> / {item.trials?.length || 0} Correct
+                    </td>
                     <td className="px-6 py-5 text-center font-mono text-blue-400 text-xl font-bold">
                       {item.trials?.length > 0 
                         ? (item.trials.reduce((acc, t) => acc + (t.responseTimeMs || t.response_time_ms || 0), 0) / item.trials.length).toFixed(1) 
