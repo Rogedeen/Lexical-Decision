@@ -12,11 +12,12 @@
 5. [not-started] Final Precision & Production Deployment
 
 ## Active Tasks
-- **Orchestrator:** Verified Frontend and Backend completion reports. All UAT and feature additions (Admin Auth, Excel Matrix) are complete. Preparing for final project sign-off.
-- **Frontend Agent:** [completed] Integrated `adminLogin`, `checkAuth`, and `fetchFullReport` from `supabase_service.js`. Developed `excelGenerator.js` to create the requested Participant x 60 Trials Matrix Excel with Global Averages footer.
-- **Backend Agent:** [completed] Provided frontend with `supabase_service.js` containing real Auth APIs and nested data fetching queries.
+- **Orchestrator:** Analyzing console logs. Identified `TypeError` in AdminDashboard and duplicate Supabase client instances. Coordinating Frontend and Backend agents for a synchronized fix.
+- **Frontend Agent:** [pending] Fix `selectedParticipant` null check in `AdminDashboard.jsx`. Unify Supabase client initialization. Resolve asset 404.
+- **Backend Agent:** [pending] Verify RLS rules for anonymous inserts and admin-only reads.
+- **Researcher Agent:** [pending] Audit for security leaks and duplicate clients.
 
 ## Blockers
-- None. System is ready for final deployment.
-- Database inserts failing (assigned to Backend).
-- Admin panel open to public (assigned to Frontend/Backend).
+- **Critical:** `TypeError: Cannot read properties of null (reading 'firstName')` crashing the Admin Dashboard.
+- **Warning:** Multiple `GoTrueClient` instances causing undefined behavior.
+- **Asset:** `/vite.svg` returning 404 (missing public folder).

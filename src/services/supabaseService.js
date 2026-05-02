@@ -1,9 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-export const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '../lib/supabaseClient';
 
 /**
  * Saves participant information to the database.
@@ -36,10 +31,10 @@ export async function saveParticipant(participant) {
 export async function saveTrialResults(participantId, results) {
     const formattedResults = results.map(result => ({
         participant_id: participantId,
-        stimulus: result.stimulus,
+        stimulus: result.stimulus || result.word,
         response_time_ms: result.responseTimeMs,
         is_correct: result.isCorrect,
-        trial_type: result.trialType
+        trial_type: result.trialType || result.type
     }));
 
     const { data, error } = await supabase
@@ -173,6 +168,7 @@ export async function deleteParticipant(participantId) {
         throw participantError;
     }
 }
+
 export async function getAllResults() {
     const { data, error } = await supabase
         .from('participants')

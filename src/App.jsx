@@ -3,7 +3,8 @@ import ParticipantForm from './components/ParticipantForm';
 import LexicalTask from './components/LexicalTask';
 import AdminDashboard from './components/AdminDashboard';
 import { generatePDFReport } from './lib/reportGenerator';
-import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
+import { isSupabaseConfigured } from './lib/supabaseClient';
+import { saveParticipant, saveTrialResults } from './services/supabaseService';
 
 function App() {
   const [step, setStep] = useState('welcome'); // welcome, form, task, results, admin
@@ -31,31 +32,11 @@ function App() {
     setIsSaving(true);
     try {
       // 1. Save participant to Supabase
-      const { data: pData, error: pError } = await supabase
-        .from('participants')
-        .insert([{ 
-          first_name: participant.firstName, 
-          last_name: participant.lastName 
-        }])
-        .select()
-        .single();
-
-      if (pError) throw pError;
+      const pData = await saveParticipant(participant);
 
       // 2. Save trial results with participant ID
-      const trialsToInsert = testData.map(t => ({
-        participant_id: pData.id,
-        stimulus: t.word,
-        response_time_ms: Math.round(t.responseTimeMs),
-        is_correct: t.isCorrect,
-        trial_type: t.type
-      }));
+      await saveTrialResults(pData.id, testData);
 
-      const { error: tError } = await supabase
-        .from('trial_results')
-        .insert(trialsToInsert);
-
-      if (tError) throw tError;
       console.log('Data successfully saved to Supabase');
     } catch (error) {
       console.error('Error saving data:', error.message);

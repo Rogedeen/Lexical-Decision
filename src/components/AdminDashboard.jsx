@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Download, Trash2, Eye, Lock, LogIn, Loader2 } from 'lucide-react';
-import { adminLogin, fetchFullReport, isAuthenticated as checkAuth, deleteParticipant } from '../../supabase_service';
+import { adminLogin, fetchFullReport, isAuthenticated as checkAuth, deleteParticipant } from '../services/supabaseService';
 import { exportMatrixExcel } from '../lib/excelGenerator';
 import { mapToOriginalOrder } from '../lib/words';
 
@@ -56,7 +56,7 @@ const AdminDashboard = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Bu test sonucunu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
+    if (window.confirm("Are you sure you want to delete this test result? This action cannot be undone.")) {
       try {
         await deleteParticipant(id);
         setParticipants(participants.filter(p => p.id !== id));
@@ -64,7 +64,7 @@ const AdminDashboard = () => {
           setSelectedParticipant(null);
         }
       } catch (error) {
-        alert("Silme işlemi sırasında bir hata oluştu.");
+        alert("An error occurred during the deletion process.");
       }
     }
   };
@@ -137,6 +137,7 @@ const AdminDashboard = () => {
         </div>
       ) : (
         <>
+          {selectedParticipant && (
             <div className="bg-gray-800 rounded-3xl p-8 border border-gray-700 mb-8 animate-in fade-in slide-in-from-bottom-4">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-blue-400">{selectedParticipant.firstName} {selectedParticipant.lastName}'s Trials (Original Order)</h2>
@@ -153,6 +154,7 @@ const AdminDashboard = () => {
                 ))}
               </div>
             </div>
+          )}
 
           <div className="bg-gray-800 rounded-3xl border border-gray-700 overflow-hidden shadow-2xl">
             <table className="w-full text-left">
@@ -171,7 +173,7 @@ const AdminDashboard = () => {
                     <td className="px-6 py-5 text-gray-400">{item.trials?.length || 0} / 60</td>
                     <td className="px-6 py-5 text-center font-mono text-blue-400 text-xl font-bold">
                       {item.trials?.length > 0 
-                        ? (item.trials.reduce((acc, t) => acc + t.response_time_ms, 0) / item.trials.length).toFixed(1) 
+                        ? (item.trials.reduce((acc, t) => acc + (t.responseTimeMs || t.response_time_ms || 0), 0) / item.trials.length).toFixed(1) 
                         : 0} ms
                     </td>
                     <td className="px-6 py-5 text-right space-x-2">
