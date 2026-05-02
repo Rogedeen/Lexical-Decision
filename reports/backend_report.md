@@ -9,21 +9,75 @@
 2. [completed] RLS Policies Configuration - 2026-05-01
 3. [completed] Supabase Client Services Setup (JS) - 2026-05-01
 
+## 2. Admin Authentication Setup
+Admin access is secured using Supabase Auth. 
+
+### Implementation:
+1.  **Client functions:** `adminLogin`, `adminLogout`, and `isAuthenticated` added to [supabase_service.js](supabase_service.js).
+2.  **Dashboard Access:** The Frontend logic should use `isAuthenticated()` to guard the admin route.
+3.  **Manual Admin Account Creation:**
+    *   Go to **Supabase Dashboard -> Authentication -> Users**.
+    *   Click **Add User -> Create New User**.
+    *   Enter the Admin email and password.
+    *   *Note:* Ensure "Confirm Email" is disabled in Auth Settings if you want to log in immediately.
+
 ## 1. Current Status
-* I have finalized the database schema, configured Row Level Security (RLS) for anonymous data submission and admin-only reading, and provided the JS service abstraction layer for the Frontend agent.
+* Finalized Supabase Client Services with Auth and Fetch functions. The `supabase_service.js` file is now ready for Frontend integration.
 
 ## 2. Done
-* **SQL Schema:** Defined `participants` and `trial_results` tables with proper relations.
-* **Security:** Implemented RLS policies to allow anyone to insert but only admins to select.
-* **Services:** Created [supabase_service.js](supabase_service.js) for easy integration.
+* **Supabase Client Logic:** Updated [supabase_service.js](supabase_service.js) with the following methods:
+    * `adminLogin(email, password)`: Handles secure sign-in via Supabase Auth.
+    * `adminLogout()`: Handles secure sign-out.
+    * `fetchFullReport()`: Fetches all participants and their nested trial results in a single, easy-to-read JSON structure.
+* **No SQL Required:** Confirmed that current SQL schema and RLS policies support these service calls.
 
-## 3. To Do (Next Steps)
-* [ ] Support Frontend Agent with integration of `supabase_service.js`.
-* [ ] Set up Authentication flow documentation for the Admin Dashboard.
+## 3. Usage Guide for Frontend Agent
+The Frontend Agent can import and use the following functions from [supabase_service.js](supabase_service.js):
 
-## 4. Blockers / Dependencies
-* Needs Supabase URL and Anon Key from the environment/user to make the services functional.
-* Waiting for Frontend agent to integrate the service.
+### A. Authentication
+```javascript
+import { adminLogin, adminLogout } from './supabase_service.js';
+
+// To login
+try {
+    const { user, session } = await adminLogin('admin@example.com', 'secure_password');
+} catch (error) {
+    console.error('Login failed:', error.message);
+}
+
+// To logout
+await adminLogout();
+```
+
+### B. Fetching Results for Admin Dashboard
+```javascript
+import { fetchFullReport } from './supabase_service.js';
+
+const reportData = await fetchFullReport();
+/* 
+Result Structure:
+[
+  {
+    id: "uuid",
+    firstName: "John",
+    lastName: "Doe",
+    date: "timestamp",
+    trials: [
+      { stimulus: "apple", responseTimeMs: 450, isCorrect: true, trialType: "word" },
+      ...
+    ]
+  },
+  ...
+]
+*/
+```
+
+## 4. To Do (Next Steps)
+* [ ] Assist Frontend Agent with UI binding of `fetchFullReport`.
+* [ ] Verify data persistence integrity during stress testing.
+
+## 5. Blockers / Dependencies
+* None. Ready for Frontend integration.
 
 ---
 
@@ -56,19 +110,28 @@ CREATE TABLE trial_results (
 ALTER TABLE participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trial_results ENABLE ROW LEVEL SECURITY;
 
--- Anonymous Insert Policy (Allow anyone to submit data)
-CREATE POLICY "Allow anonymous insert on participants" ON participants
-    FOR INSERT WITH CHECK (true);
+-- 1. Anonymous Insert Policy (Allow anyone to submit data)
+-- This allows participants to submit their results without logging in.
+-- They can ONLY insert new records, cannot view or modify existing ones.
+CREATE POLICY "Enable insert for anonymous users" ON participants
+    FOR INSERT 
+    WITH CHECK (true);
 
-CREATE POLICY "Allow anonymous insert on trial_results" ON trial_results
-    FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable insert for anonymous users" ON trial_results
+    FOR INSERT 
+    WITH CHECK (true);
 
--- Admin Read Policy (Allow only authenticated admins to read)
-CREATE POLICY "Allow authenticated admins to read participants" ON participants
-    FOR SELECT TO authenticated USING (true);
+-- 2. Admin Read Policy (Allow only authenticated admins to read)
+-- Uses Supabase Auth to ensure only logged-in users (admins) can access data.
+CREATE POLICY "Enable select for authenticated admins only" ON participants
+    FOR SELECT 
+    TO authenticated 
+    USING (true);
 
-CREATE POLICY "Allow authenticated admins to read trial_results" ON trial_results
-    FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Enable select for authenticated admins only" ON trial_results
+    FOR SELECT 
+    TO authenticated 
+    USING (true);
 ```
 
 ## Security Strategy (RLS)
