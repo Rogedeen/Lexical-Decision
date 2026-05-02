@@ -86,6 +86,17 @@ export const exportMatrixExcel = (participantsData) => {
   const worksheetData = [headers, ...rows, footerRow];
   // SheetJS handles UTF-8 automatically for XLSX
   const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+  // Set column widths
+  const colWidths = [
+    { wch: 15 }, // First Name
+    { wch: 12 }, // Last Name
+    ...Array(60).fill({ wch: 12 }), // Word columns 1-60
+    { wch: 12 }, // Total Time
+    { wch: 12 }  // Average Time
+  ];
+  worksheet['!cols'] = colWidths;
+
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Lexical Task Report");
 
