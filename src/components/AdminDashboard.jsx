@@ -143,15 +143,27 @@ const AdminDashboard = () => {
                 <h2 className="text-2xl font-bold text-blue-400">{selectedParticipant.firstName} {selectedParticipant.lastName}'s Trials (Original Order)</h2>
                 <button onClick={() => setSelectedParticipant(null)} className="text-gray-400 hover:text-white underline">Close Details</button>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-10 gap-2">
-                {mapToOriginalOrder(selectedParticipant.trials).map((r, i) => (
-                  <div key={i} className="bg-gray-900/50 p-2 rounded border border-gray-700 text-center">
-                    <p className="text-[10px] text-gray-500">{i+1}. {r.word}</p>
-                    <p className={`text-sm font-mono ${r.isCorrect ? 'text-blue-300' : 'text-red-400'}`}>
-                      {r.responseTimeMs > 0 ? `${r.responseTimeMs.toFixed(0)}ms` : '-'}
-                    </p>
-                  </div>
-                ))}
+              <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                {mapToOriginalOrder(selectedParticipant.trials).map((r, i) => {
+                  const givenAnswer = r.responseTimeMs > 0 
+                    ? (r.isCorrect ? r.type : (r.type === 'word' ? 'non-word' : 'word'))
+                    : '-';
+                  
+                  return (
+                    <div key={i} className="bg-gray-900/50 p-3 rounded-xl border border-gray-700 flex flex-col justify-between">
+                      <div className="mb-2">
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">#{i+1} {r.word}</p>
+                        <p className={`text-xs font-mono mt-1 ${r.isCorrect ? 'text-blue-300' : 'text-red-400'}`}>
+                          {r.responseTimeMs > 0 ? `${r.responseTimeMs.toFixed(1)}ms` : 'No Data'}
+                        </p>
+                      </div>
+                      <div className="text-[9px] space-y-0.5">
+                        <p className="text-gray-400">Correct: <span className="text-white uppercase">{r.type}</span></p>
+                        <p className="text-gray-400">Given: <span className={r.isCorrect ? 'text-green-400' : 'text-red-400'}>{givenAnswer.toUpperCase()}</span></p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
